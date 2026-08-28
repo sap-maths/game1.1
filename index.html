@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海底尋寶 — 數字探險</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans HK', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(180deg, #006994 0%, #003d5c 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .ocean-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .bubble {
+            position: absolute;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            animation: rise 8s infinite ease-in;
+        }
+        
+        @keyframes rise {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
+        }
+        
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header {
+            text-align: center;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .difficulty-select, .mode-select {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .difficulty-select h2, .mode-select h2 {
+            color: #006994;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+        }
+        
+        .btn-easy { background: #90EE90; color: #2d5a2d; }
+        .btn-medium { background: #FFD93D; color: #8B6914; }
+        .btn-hard { background: #FF6B6B; color: #fff; }
+        
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .game-area {
+            background: rgba(255,255,255,0.98);
+            border-radius: 25px;
+            padding: 30px;
+            min-height: 500px;
+            display: none;
+        }
+        
+        .game-area.active {
+            display: block;
+        }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #E3F2FD;
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            color: #1565C0;
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+        
+        .level-progress {
+            width: 100%;
+            height: 10px;
+            background: #BBDEFB;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .level-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #42A5F5, #1E88E5);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        .question-area {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .mascot {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .question-text {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .question-text .highlight {
+            color: #E53935;
+            font-weight: 700;
+            font-size: 2.2rem;
+        }
+        
+        .number-bubbles {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        
+        .number-bubble {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 4px solid;
+            background: #fff;
+        }
+        
+        .number-bubble:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+        
+        .number-bubble.correct {
+            animation: correctPop 0.6s ease;
+            background: #C8E6C9 !important;
+            border-color: #4CAF50 !important;
+        }
+        
+        .number-bubble.wrong {
+            animation: shake 0.5s ease;
+            background: #FFCDD2 !important;
+            border-color: #F44336 !important;
+        }
+        
+        @keyframes correctPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: #fff;
+            padding: 40px 60px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: transform 0.4s ease;
+        }
+        
+        .feedback.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .feedback-icon {
+            font-size: 5rem;
+            margin-bottom: 15px;
+        }
+        
+        .feedback-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .treasure-chest {
+            position: fixed;
+            bottom: -200px;
+            right: 30px;
+            font-size: 4rem;
+            transition: bottom 0.5s ease;
+            cursor: pointer;
+        }
+        
+        .treasure-chest.show {
+            bottom: 30px;
+        }
+        
+        .treasure-chest.open {
+            animation: chestOpen 0.5s ease;
+        }
+        
+        @keyframes chestOpen {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(-10deg); }
+            100% { transform: scale(1); }
+        }
+        
+        .star-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #FFD700;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #8B4513;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .number-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .number-line-box {
+            width: 50px;
+            height: 60px;
+            border: 3px solid #90CAF9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: #fff;
+            position: relative;
+        }
+        
+        .number-line-box.missing {
+            background: #FFF3E0;
+            border-color: #FF9800;
+            border-style: dashed;
+        }
+        
+        .number-line-box::after {
+            content: '→';
+            position: absolute;
+            right: -15px;
+            color: #90CAF9;
+        }
+        
+        .number-line-box:last-child::after {
+            content: none;
+        }
+        
+        .comparison-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .fish-group {
+            text-align: center;
+        }
+        
+        .fish-group .count {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .fish-group .fishes {
+            font-size: 2rem;
+            letter-spacing: 5px;
+        }
+        
+        .comparison-symbol {
+            font-size: 4rem;
+            color: #E53935;
+            font-weight: 700;
+        }
+        
+        .symbol-options {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .symbol-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            border: 4px solid #2196F3;
+            background: #fff;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .symbol-btn:hover {
+            background: #E3F2FD;
+            transform: scale(1.1);
+        }
+        
+        .completion-screen {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        
+        .completion-screen h2 {
+            font-size: 2.5rem;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+        
+        .trophy {
+            font-size: 8rem;
+            margin-bottom: 30px;
+            animation: trophyBounce 1s ease infinite;
+        }
+        
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .final-score {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .btn-restart {
+            background: #2196F3;
+            color: #fff;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.8rem; }
+            .number-bubble { width: 70px; height: 70px; font-size: 2rem; }
+            .mascot { font-size: 3.5rem; }
+            .question-text { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 海洋背景動畫 -->
+    <div class="ocean-bg" id="oceanBg"></div>
+    
+    <!-- 星星顯示 -->
+    <div class="star-display" id="starDisplay" style="display: none;">
+        ⭐ <span id="starCount">0</span>
+    </div>
+    
+    <!-- 寶箱 -->
+    <div class="treasure-chest" id="treasureChest">🎁</div>
+    
+    <!-- 反饋彈窗 -->
+    <div class="feedback" id="feedback">
+        <div class="feedback-icon" id="feedbackIcon"></div>
+        <div class="feedback-text" id="feedbackText"></div>
+    </div>
+    
+    <div class="game-container">
+        <!-- 標題 -->
+        <div class="header">
+            <h1>🐙 海底尋寶 🐙</h1>
+            <p>小一數學：認識20以內的數</p>
+        </div>
+        
+        <!-- 難度選擇 -->
+        <div class="difficulty-select" id="difficultySelect">
+            <h2>請選擇難度</h2>
+            <div class="btn-group">
+                <button class="btn btn-easy" onclick="startGame('easy')">
+                    🌱 初階<br><small>1-10</small>
+                </button>
+                <button class="btn btn-medium" onclick="startGame('medium')">
+                    🌿 中階<br><small>1-15</small>
+                </button>
+                <button class="btn btn-hard" onclick="startGame('hard')">
+                    🌳 進階<br><small>1-20</small>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 遊戲區域 -->
+        <div class="game-area" id="gameArea">
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-icon">🏆</span>
+                    <span>第 <span id="currentLevel">1</span> 關</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-icon">✅</span>
+                    <span><span id="correctCount">0</span> 題正確</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-icon">❤️</span>
+                    <span>還有 <span id="livesCount">3</span> 次機會</span>
+                </div>
+            </div>
+            <div class="level-progress">
+                <div class="level-progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            
+            <div class="question-area" id="questionArea">
+                <!-- 題目動態生成 -->
+            </div>
+        </div>
+        
+        <!-- 完成畫面 -->
+        <div class="game-area" id="completionScreen">
+            <div class="completion-screen">
+                <div class="trophy">🏆</div>
+                <h2>恭喜你完成所有挑戰！</h2>
+                <p class="final-score">
+                    你獲得了 <span id="finalStars" class="highlight">0</span> 顆星星！
+                </p>
+                <button class="btn btn-restart" onclick="location.reload()">
+                    🔄 再玩一次
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        let gameState = {
+            difficulty: 'easy',
+            level: 1,
+            maxLevels: 10,
+            correct: 0,
+            lives: 3,
+            stars: 0,
+            currentQuestion: null
+        };
+        
+        // 難度設定
+        const difficultySettings = {
+            easy: { maxNum: 10, types: ['count', 'numberLine', 'compare'] },
+            medium: { maxNum: 15, types: ['count', 'numberLine', 'compare', 'beforeAfter'] },
+            hard: { maxNum: 20, types: ['count', 'numberLine', 'compare', 'beforeAfter', 'compose'] }
+        };
+        
+        // 初始化海洋背景
+        function initOcean() {
+            const ocean = document.getElementById('oceanBg');
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.width = bubble.style.height = (20 + Math.random() * 60) + 'px';
+                bubble.style.animationDelay = Math.random() * 8 + 's';
+                bubble.style.animationDuration = (6 + Math.random() * 6) + 's';
+                ocean.appendChild(bubble);
+            }
+        }
+        
+        // 開始遊戲
+        function startGame(difficulty) {
+            gameState.difficulty = difficulty;
+            gameState.level = 1;
+            gameState.correct = 0;
+            gameState.lives = 3;
+            gameState.stars = 0;
+            
+            document.getElementById('difficultySelect').style.display = 'none';
+            document.getElementById('gameArea').classList.add('active');
+            document.getElementById('starDisplay').style.display = 'block';
+            document.getElementById('treasureChest').classList.add('show');
+            
+            updateStats();
+            generateQuestion();
+        }
+        
+        // 更新統計
+        function updateStats() {
+            document.getElementById('currentLevel').textContent = gameState.level;
+            document.getElementById('correctCount').textContent = gameState.correct;
+            document.getElementById('livesCount').textContent = gameState.lives;
+            document.getElementById('starCount').textContent = gameState.stars;
+            document.getElementById('progressBar').style.width = 
+                ((gameState.level - 1) / gameState.maxLevels * 100) + '%';
+        }
+        
+        // 生成題目
+        function generateQuestion() {
+            const settings = difficultySettings[gameState.difficulty];
+            const types = settings.types;
+            const type = types[Math.floor(Math.random() * types.length)];
+            const maxNum = settings.maxNum;
+            
+            const questionArea = document.getElementById('questionArea');
+            questionArea.innerHTML = '';
+            
+            // 添加吉祥物
+            const mascot = document.createElement('div');
+            mascot.className = 'mascot';
+            mascot.textContent = ['🐙', '🦀', '🐠', '🐡', '🦈'][Math.floor(Math.random() * 5)];
+            questionArea.appendChild(mascot);
+            
+            switch(type) {
+                case 'count':
+                    generateCountQuestion(questionArea, maxNum);
+                    break;
+                case 'numberLine':
+                    generateNumberLineQuestion(questionArea, maxNum);
+                    break;
+                case 'compare':
+                    generateCompareQuestion(questionArea, maxNum);
+                    break;
+                case 'beforeAfter':
+                    generateBeforeAfterQuestion(questionArea, maxNum);
+                    break;
+                case 'compose':
+                    generateComposeQuestion(questionArea, maxNum);
+                    break;
+            }
+        }
+        
+        // 數數題目
+        function generateCountQuestion(container, maxNum) {
+            const target = Math.floor(Math.random() * maxNum) + 1;
+            const items = ['🐟', '🐚', '⭐', '🦐', '🐙'];
+            const item = items[Math.floor(Math.random() * items.length)];
+            
+            const questionText = document.createElement('div');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `數一數，海裡有多少個<span class="highlight">${item}</span>？`;
+            container.appendChild(questionText);
+            
+            // 顯示物品
+            const itemsDisplay = document.createElement('div');
+            itemsDisplay.style.fontSize = '2.5rem';
+            itemsDisplay.style.letterSpacing = '8px';
+            itemsDisplay.style.margin = '20px 0';
+            itemsDisplay.style.lineHeight = '2';
+            itemsDisplay.textContent = item.repeat(target);
+            container.appendChild(itemsDisplay);
+            
+            // 生成選項
+            const options = generateOptions(target, 1, maxNum);
+            createNumberBubbles(container, options, target);
+            
+            gameState.currentQuestion = { answer: target, type: 'count' };
+        }
+        
+        // 數線題目
+        function generateNumberLineQuestion(container, maxNum) {
+            const start = Math.floor(Math.random() * (maxNum - 5)) + 1;
+            const missingIndex = Math.floor(Math.random() * 5) + 1;
+            const numbers = [start, start+1, start+2, start+3, start+4, start+5];
+            const answer = numbers[missingIndex];
+            
+            const questionText = document.createElement('div');
+            questionText.className = 'question-text';
+            questionText.textContent = '數線上缺少了哪個數？';
+            container.appendChild(questionText);
+            
+            const numberLine = document.createElement('div');
+            numberLine.className = 'number-line';
+            
+            numbers.forEach((num, index) => {
+                const box = document.createElement('div');
+                box.className = 'number-line-box' + (index === missingIndex ? ' missing' : '');
+                box.textContent = index === missingIndex ? '?' : num;
+                numberLine.appendChild(box);
+            });
+            container.appendChild(numberLine);
+            
+            const options = generateOptions(answer, Math.max(1, start-2), Math.min(maxNum, start+7));
+            createNumberBubbles(container, options, answer);
+            
+            gameState.currentQuestion = { answer: answer, type: 'numberLine' };
+        }
+        
+        // 比較題目
+        function generateCompareQuestion(container, maxNum) {
+            const num1 = Math.floor(Math.random() * maxNum) + 1;
+            let num2 = Math.floor(Math.random() * maxNum) + 1;
+            while (num2 === num1) num2 = Math.floor(Math.random() * maxNum) + 1;
+            
+            const questionText = document.createElement('div');
+            questionText.className = 'question-text';
+            questionText.textContent = '哪一邊的魚比較多？請選擇正確的符號';
+            container.appendChild(questionText);
+            
+            const visual = document.createElement('div');
+            visual.className = 'comparison-visual';
+            visual.innerHTML = `
+                <div class="fish-group">
+                    <div class="count">${num1}</div>
+                    <div class="fishes">🐟</div>
+                </div>
+                <div class="comparison-symbol" id="compareSymbol">?</div>
+                <div class="fish-group">
+                    <div class="count">${num2}</div>
+                    <div class="fishes">🐟</div>
+                </div>
+            `;
+            container.appendChild(visual);
+            
+            const symbolOptions = document.createElement('div');
+            symbolOptions.className = 'symbol-options';
+            
+            const symbols = [
+                { char: '>', value: 'greater', text: '大於' },
+                { char: '=', value: 'equal', text: '等於' },
+                { char: '<', value: 'less', text: '小於' }
+            ];
+            
+            let correctAnswer;
+            if (num1 > num2) correctAnswer = 'greater';
+            else if (num1 < num2) correctAnswer = 'less';
+            else correctAnswer = 'equal';
+            
+            symbols.forEach(sym => {
+                const btn = document.createElement('button');
+                btn.className = 'symbol-btn';
+                btn.textContent = sym.char;
+                btn.onclick = () => checkSymbolAnswer(sym.value, correctAnswer, sym.char);
+                symbolOptions.appendChild(btn);
+            });
+            container.appendChild(symbolOptions);
+            
+            gameState.currentQuestion = { 
+                answer: correctAnswer, 
+                type: 'compare',
+                num1, num2
+            };
+        }
+        
+        // 前後數題目
+        function generateBeforeAfterQuestion(container, maxNum) {
+            const target = Math.floor(Math.random() * (maxNum - 2)) + 2;
+            const isBefore = Math.random() > 0.5;
+            
+            const questionText = document.createElement('div');
+            questionText.className = 'question-text';
+            questionText.innerHTML = isBefore 
+                ? `<span class="highlight">${target}</span> 的前面一個數是甚麼？`
+                : `<span class="highlight">${target}</span> 的後面一個數是甚麼？`;
+            container.appendChild(questionText);
+            
+            const answer = isBefore ? target - 1 : target + 1;
+            const options = generateOptions(answer, Math.max(1, target-3), Math.min(maxNum, target+3));
+            createNumberBubbles(container, options, answer);
+            
+            gameState.currentQuestion = { answer: answer, type: 'beforeAfter' };
+        }
+        
+        // 數的組合題目（進階）
+        function generateComposeQuestion(container, maxNum) {
+            const total = Math.floor(Math.random() * (maxNum - 5)) + 6;
+            const part1 = Math.floor(Math.random() * (total - 2)) + 2;
+            const part2 = total - part1;
+            
+            const items1 = '🐠'.repeat(part1);
+            const items2 = '🐡'.repeat(part2);
+            
+            const questionText = document.createElement('div');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `數一數，<span style="color:#FF6B6B">${items1}</span> 和 <span style="color:#4ECDC4">${items2}</span><br>合共有多少條魚？`;
+            questionText.style.lineHeight = '2';
+            container.appendChild(questionText);
+            
+            const options = generateOptions(total, Math.max(1, total-4), Math.min(maxNum, total+4));
+            createNumberBubbles(container, options, total);
+            
+            gameState.currentQuestion = { answer: total, type: 'compose' };
+        }
+        
+        // 生成選項
+        function generateOptions(correct, min, max) {
+            const options = [correct];
+            while (options.length < 4) {
+                const num = Math.floor(Math.random() * (max - min + 1)) + min;
+                if (!options.includes(num)) options.push(num);
+            }
+            return options.sort(() => Math.random() - 0.5);
+        }
+        
+        // 創建數字泡泡
+        function createNumberBubbles(container, options, correct) {
+            const bubblesContainer = document.createElement('div');
+            bubblesContainer.className = 'number-bubbles';
+            
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
+            
+            options.forEach((num, index) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'number-bubble';
+                bubble.textContent = num;
+                bubble.style.borderColor = colors[index % colors.length];
+                bubble.style.color = colors[index % colors.length];
+                bubble.onclick = () => checkAnswer(num, correct, bubble);
+                bubblesContainer.appendChild(bubble);
+            });
+            
+            container.appendChild(bubblesContainer);
+        }
+        
+        // 檢查符號答案
+        function checkSymbolAnswer(selected, correct, symbolChar) {
+            const isCorrect = selected === correct;
+            const symbolEl = document.getElementById('compareSymbol');
+            
+            if (isCorrect) {
+                symbolEl.textContent = symbolChar;
+                symbolEl.style.color = '#4CAF50';
+                showFeedback(true, '答對了！');
+                handleCorrect();
+            } else {
+                symbolEl.style.color = '#F44336';
+                showFeedback(false, '再想想看！');
+                handleWrong();
+            }
+        }
+        
+        // 檢查數字答案
+        function checkAnswer(selected, correct, element) {
+            if (selected === correct) {
+                element.classList.add('correct');
+                showFeedback(true, '答對了！');
+                handleCorrect();
+            } else {
+                element.classList.add('wrong');
+                showFeedback(false, '再想想看！');
+                handleWrong();
+            }
+        }
+        
+        // 處理正確
+        function handleCorrect() {
+            gameState.correct++;
+            gameState.stars += 10;
+            updateStats();
+            
+            // 寶箱動畫
+            const chest = document.getElementById('treasureChest');
+            chest.classList.add('open');
+            setTimeout(() => chest.classList.remove('open'), 500);
+            
+            setTimeout(() => {
+                if (gameState.level >= gameState.maxLevels) {
+                    showCompletion();
+                } else {
+                    gameState.level++;
+                    updateStats();
+                    generateQuestion();
+                }
+            }, 1500);
+        }
+        
+        // 處理錯誤
+        function handleWrong() {
+            gameState.lives--;
+            updateStats();
+            
+            if (gameState.lives <= 0) {
+                setTimeout(() => {
+                    alert('遊戲結束！你獲得了 ' + gameState.stars + ' 顆星星！');
+                    location.reload();
+                }, 1000);
+            } else {
+                setTimeout(() => {
+                    document.querySelectorAll('.number-bubble.wrong').forEach(el => {
+                        el.classList.remove('wrong');
+                    });
+                }, 1000);
+            }
+        }
+        
+        // 顯示反饋
+        function showFeedback(isCorrect, text) {
+            const feedback = document.getElementById('feedback');
+            const icon = document.getElementById('feedbackIcon');
+            const textEl = document.getElementById('feedbackText');
+            
+            icon.textContent = isCorrect ? '🎉' : '😅';
+            textEl.textContent = text;
+            textEl.style.color = isCorrect ? '#4CAF50' : '#FF9800';
+            
+            feedback.classList.add('show');
+            setTimeout(() => feedback.classList.remove('show'), 1200);
+        }
+        
+        // 顯示完成畫面
+        function showCompletion() {
+            document.getElementById('gameArea').classList.remove('active');
+            document.getElementById('completionScreen').classList.add('active');
+            document.getElementById('finalStars').textContent = gameState.stars;
+        }
+        
+        // 初始化
+        initOcean();
+    </script>
+</body>
+</html>
