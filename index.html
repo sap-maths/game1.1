@@ -51,6 +51,50 @@
             z-index: 10;
         }
         
+        /* 頁面大小控制：喺遊戲區頂部、正常文件流內，唔遮內容；掣本身喺 #zoomTarget 外面，所以唔會被縮放 */
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 10px;
+            margin: 10px 0 0;
+            background: rgba(255,255,255,0.14);
+            border-radius: 16px;
+        }
+        .zoom-label-text {
+            color: #fff;
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+        .zoom-btn {
+            min-width: 96px;
+            min-height: 48px;
+            padding: 10px 18px;
+            border-radius: 14px;
+            border: 2px solid #fff;
+            background: #fff;
+            color: #006994;
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .zoom-value {
+            min-width: 76px;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: #FFD93D;
+            color: #5d4300;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        #zoomTarget { width: 100%; margin: 0 auto; }
         .header {
             text-align: center;
             color: #fff;
@@ -64,7 +108,7 @@
         }
         
         .header p {
-            font-size: 1.1rem;
+            font-size: 1.125rem; /* 18px，小一學生易讀 */
             opacity: 0.9;
         }
         
@@ -94,8 +138,9 @@
             padding: 15px 30px;
             border: none;
             border-radius: 15px;
-            font-size: 1.1rem;
+            font-size: 1.125rem; /* 18px */
             font-family: inherit;
+            min-height: 48px; /* 可撳掣最少 48px 高 */
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: 700;
@@ -105,6 +150,8 @@
         .btn-medium { background: #FFD93D; color: #8B6914; }
         .btn-hard { background: #FF6B6B; color: #fff; }
         
+        .btn:focus-visible, .symbol-btn:focus-visible, .zoom-btn:focus-visible, .number-bubble:focus-visible { outline: 3px solid #FFD93D; outline-offset: 2px; }
+        button { touch-action: manipulation; }
         .btn:hover {
             transform: translateY(-3px) scale(1.05);
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
@@ -137,8 +184,10 @@
         .stat {
             display: flex;
             align-items: center;
+            flex-wrap: wrap; /* 細屏時圖示同文字可以換行，唔會頂出界 */
+            min-width: 0;
             gap: 8px;
-            font-size: 1.1rem;
+            font-size: 1.125rem; /* 18px */
             color: #1565C0;
         }
         
@@ -178,7 +227,9 @@
             50% { transform: translateY(-15px); }
         }
         
+        #questionArea div { overflow-wrap: anywhere; max-width: 100%; } /* 數數題 emoji 串可斷行 */
         .question-text {
+            overflow-wrap: break-word;
             font-size: 1.8rem;
             color: #333;
             margin-bottom: 30px;
@@ -252,6 +303,8 @@
             border-radius: 30px;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: calc(100vw - 32px); /* 細屏唔貼邊、唔出界 */
+            box-sizing: border-box;
             z-index: 1000;
             transition: transform 0.4s ease;
         }
@@ -378,6 +431,7 @@
         .symbol-options {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap; /* 修復：原版無 wrap，360px 超闊 80px */
             gap: 30px;
             margin-top: 30px;
         }
@@ -434,10 +488,47 @@
         }
         
         @media (max-width: 600px) {
+            /* 收窄巢狀 padding：360px 時 question-area 內容由 220px 變 288px，係唔出界嘅關鍵 */
+            .game-container { padding: 12px; }
+            .header { padding: 12px 8px; }
             .header h1 { font-size: 1.8rem; }
-            .number-bubble { width: 70px; height: 70px; font-size: 2rem; }
+            .difficulty-select, .mode-select { padding: 20px 14px; margin: 12px 0; }
+            .game-area { padding: 20px 14px; min-height: 0; }
+            .question-area { padding: 24px 10px; }
+            .stats-bar { padding: 12px 14px; }
+            /* 數字泡泡：68px + gap 12，一排 3 個 (3x68+2x12=228 ≤ 288)，第 4 個換行 */
+            .number-bubble { width: 68px; height: 68px; font-size: 2rem; }
+            .number-bubbles { gap: 12px; }
             .mascot { font-size: 3.5rem; }
             .question-text { font-size: 1.4rem; }
+            .question-text .highlight { font-size: 1.8rem; }
+            /* 數線：6 格一排 (6x44+5x4=284 ≤ 288)；細屏隱藏箭頭，免伸出格外 */
+            .number-line { gap: 4px; }
+            .number-line-box { width: 44px; height: 54px; font-size: 1.3rem; }
+            .number-line-box::after { content: none; }
+            /* 比較符號：一排三個 (3x68+2x14=232 ≤ 288) */
+            .symbol-options { gap: 14px; }
+            .symbol-btn { width: 68px; height: 68px; font-size: 2.5rem; }
+            /* 比較圖：一排 (約90+48+90+2x16=260 ≤ 288) */
+            .comparison-visual { gap: 16px; }
+            .comparison-symbol { font-size: 3rem; }
+            .fish-group .count { font-size: 2.5rem; }
+            /* 難度掣：一排三個 (3x90+2x15=300 ≤ 308) */
+            .btn-group .btn { flex: 1 1 90px; padding: 14px 10px; }
+            .feedback { padding: 24px 20px; }
+            .feedback-text { font-size: 1.5rem; }
+            .feedback-icon { font-size: 3.5rem; }
+            /* 星星固定左下角，唔會遮住頂部嘅縮放控制 */
+            .star-display { top: auto; bottom: 12px; left: 12px; right: auto; padding: 8px 14px; font-size: 1.1rem; }
+            .treasure-chest { right: 12px; font-size: 3rem; }
+            .completion-screen { padding: 30px 10px; }
+            .completion-screen h2 { font-size: 1.8rem; }
+            .btn-restart { min-height: 48px; }
+        }
+        @media (max-width: 400px) {
+            .number-line-box { width: 42px; height: 52px; } /* 6x42+5x4=272 ≤ 288 */
+            .symbol-btn { width: 64px; height: 64px; } /* 3x64+2x14=220 ≤ 288 */
+            .number-bubble { width: 64px; height: 64px; }
         }
     </style>
 </head>
@@ -460,6 +551,15 @@
     </div>
     
     <div class="game-container">
+        <!-- 頁面大小控制：喺遊戲區頂部，唔遮內容；掣本身唔會被縮放 -->
+        <div class="zoom-controls" role="group" aria-label="頁面大小">
+            <span class="zoom-label-text">頁面大小</span>
+            <button type="button" class="zoom-btn" id="zoomOutBtn" aria-label="縮小頁面">A- 縮小</button>
+            <span class="zoom-value" id="zoomValue" aria-live="polite">100%</span>
+            <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="放大頁面">A+ 放大</button>
+        </div>
+        <!-- 縮放目標：只縮放呢個區入面嘅遊戲內容 -->
+        <div id="zoomTarget">
         <!-- 標題 -->
         <div class="header">
             <h1>🐙 海底尋寶 🐙</h1>
@@ -520,9 +620,41 @@
                 </button>
             </div>
         </div>
+        </div><!-- 縮放目標區完結 -->
     </div>
 
     <script>
+        // 頁面大小縮放：只縮放 #zoomTarget，控制掣本身唔受影響；選擇記入 localStorage，下次開啟沿用
+        var ZOOM_KEY = 'game11-page-zoom';
+        var ZOOM_MIN = 80, ZOOM_MAX = 150, ZOOM_STEP = 10;
+        var pageZoom = 100;
+        function applyPageZoom(pct) {
+            pct = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.round(pct / ZOOM_STEP) * ZOOM_STEP));
+            pageZoom = pct;
+            var target = document.getElementById('zoomTarget');
+            if (target) {
+                target.style.zoom = pct + '%';
+                // 以闊度補償，放大後都唔會出現橫向捲動（縮放後闊度 = 闊度 x zoom，設闊度為 100/zoom 即啱啱好）
+                target.style.width = (10000 / pct) + '%';
+            }
+            var label = document.getElementById('zoomValue');
+            if (label) label.textContent = pct + '%';
+            try { localStorage.setItem(ZOOM_KEY, String(pct)); } catch (e) {}
+        }
+        function changePageZoom(delta) { applyPageZoom(pageZoom + delta); }
+        function initPageZoom() {
+            var saved = 100;
+            try {
+                var raw = localStorage.getItem(ZOOM_KEY);
+                var n = parseInt(raw, 10);
+                if (!isNaN(n)) saved = n;
+            } catch (e) {}
+            applyPageZoom(saved);
+            var outBtn = document.getElementById('zoomOutBtn');
+            var inBtn = document.getElementById('zoomInBtn');
+            if (outBtn) outBtn.addEventListener('click', function () { changePageZoom(-ZOOM_STEP); });
+            if (inBtn) inBtn.addEventListener('click', function () { changePageZoom(ZOOM_STEP); });
+        }
         // 遊戲狀態
         let gameState = {
             difficulty: 'easy',
@@ -893,6 +1025,7 @@
         
         // 初始化
         initOcean();
+        initPageZoom();
     </script>
 </body>
 </html>
